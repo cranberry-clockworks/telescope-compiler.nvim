@@ -5,6 +5,26 @@ local config = require('telescope.config').values
 local actions = require('telescope.actions')
 local state = require('telescope.actions.state')
 
+local function set_compiler(buffer)
+    local selection = state.get_selected_entry()
+    if (selection == nil) then
+        print("[telescope] Nothing currently selected")
+        return
+    end
+    actions.close(buffer)
+    vim.cmd(string.format('compiler %s', selection.value))
+end
+
+local function set_compiler_global(buffer)
+    local selection = state.get_selected_entry()
+    if (selection == nil) then
+        print("[telescope] Nothing currently selected")
+        return
+    end
+    actions.close(buffer)
+    vim.cmd(string.format('compiler! %s', selection.value))
+end
+
 local function compiler(opts)
     local compilers = vim.fn.getcompletion("", 'compiler')
     pickers.new(opts, {
@@ -13,16 +33,10 @@ local function compiler(opts)
             results = compilers
         }),
         sorter = config.generic_sorter(opts),
-        attach_mappings = function(prompt_buffer)
-            actions.select_default:replace(function ()
-                local selection = state.get_selected_entry()
-                if (selection == nil) then
-                    print("[telescope] Nothing currently selected")
-                    return
-                end
-                actions.close(prompt_buffer)
-                vim.cmd(string.format('compiler %s', selection[1]))
-            end)
+        attach_mappings = function(_, map)
+            actions.select_default:replace(set_compiler)
+            map('i', '<c-w>', set_compiler_global)
+            map('n', '<c-w>', set_compiler_global)
             return true
         end,
     }):find()
